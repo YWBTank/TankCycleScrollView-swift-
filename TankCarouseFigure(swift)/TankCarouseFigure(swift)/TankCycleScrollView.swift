@@ -14,10 +14,12 @@ enum TankCycleScrollPageContolAliment {
     case center
 };
 
-
+//闭包 类似OC的Block
+typealias tapSingleImage = (pageIndex:NSInteger, model: AnyObject) -> Void
 
 class TankCycleScrollView:  UIView, UIScrollViewDelegate{
-    
+    //声明一个闭包
+    var tapSingleImageView: tapSingleImage!
     
     //本地图片数组 这两个必选一个
     var cycleImageArray: NSArray! {
@@ -53,6 +55,9 @@ class TankCycleScrollView:  UIView, UIScrollViewDelegate{
         }
     }
     
+    
+    
+    
     // optional
     //预防点击做一些动作 增添这个属性  应与图片数组的数量一致并且一一对应
     var modelArray: NSArray!
@@ -68,6 +73,8 @@ class TankCycleScrollView:  UIView, UIScrollViewDelegate{
     var cyclePageIndicatorTintColor: UIColor = UIColor.whiteColor()
     //是否允许拉伸效果  默认无效果
     var enbleStretch: Bool = false
+    //单张图片是否可以轮播
+    var enbleSingleScroll: Bool = false
     
     
     //定时器
@@ -99,11 +106,17 @@ class TankCycleScrollView:  UIView, UIScrollViewDelegate{
     //拉伸显示图片
     private var stretchImageView: UIImageView!
     
+
+    
+    
+    
+//    public class func tapSingleImageView(pageIndex:NSInteger,model:id)->Void;
     
     override init(frame: CGRect) {
         super.init(frame: CGRectZero)
         
     }
+
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -135,7 +148,8 @@ class TankCycleScrollView:  UIView, UIScrollViewDelegate{
         
         if(animationDuration > 0.0) {
             self.animationDuration = animationDuration
-            self.animationTimer = NSTimer.scheduledTimerWithTimeInterval(animationDuration, target: self, selector: "animationTimerDidFired:", userInfo: nil, repeats: true)
+//            self.animationTimer = NSTimer.scheduledTimerWithTimeInterval(animationDuration, target: self, selector: "animationTimerDidFired:", userInfo: nil, repeats: true)
+            self.animationTimer = NSTimer.scheduledTimerWithTimeInterval(animationDuration, target: self, selector: #selector(TankCycleScrollView.animationTimerDidFired(_:)), userInfo: nil, repeats: true)
             
             self.animationTimer.pauseTimer()
         }
@@ -170,6 +184,10 @@ class TankCycleScrollView:  UIView, UIScrollViewDelegate{
         self.pageControl.currentPage = self.currentPageIndex
     }
     
+    
+    public func testTapSingleImage(tapImage:tapSingleImage){
+        self.tapSingleImageView = tapImage;
+    }
     
     //根据传递类型加载图片
     private  func setSubImageViewWithPicArray(picArray:NSArray, andURLType isURL:Bool) {
@@ -256,7 +274,8 @@ class TankCycleScrollView:  UIView, UIScrollViewDelegate{
         for i in 0 ..< self.contentViews.count  {
             let contentView:UIView = self.contentViews[i] as! UIView
             contentView.userInteractionEnabled = true
-            let tapGesture = UITapGestureRecognizer.init(target: self, action: "contentViewTapAction:")
+//            let tapGesture = UITapGestureRecognizer.init(target: self, action: "contentViewTapAction:")
+            let tapGesture = UITapGestureRecognizer.init(target: self, action: #selector(TankCycleScrollView.contentViewTapAction(_:)))
             contentView.addGestureRecognizer(tapGesture)
             var rightRect = contentView.frame
             rightRect.origin = CGPointMake(CGRectGetWidth(self.cycleScrollView.frame) * (CGFloat)( counter++ ), 0);
@@ -264,7 +283,7 @@ class TankCycleScrollView:  UIView, UIScrollViewDelegate{
             self.cycleScrollView.addSubview(contentView)
         }
         
-        self.cycleScrollView.setContentOffset(CGPointMake(self.cycleScrollView.frame.size.width, 0), animated: true)
+        self.cycleScrollView.setContentOffset(CGPointMake(self.cycleScrollView.frame.size.width, 0), animated: false)
     }
     
     private func getValidNextPageIndexWithPageIndex(currentPageIndex:NSInteger)->NSInteger {
@@ -378,11 +397,29 @@ class TankCycleScrollView:  UIView, UIScrollViewDelegate{
     // 响应事件
     
     func contentViewTapAction(tap:UIGestureRecognizer) {
+        if (self.tapSingleImageView != nil) {
         
+            var currentSelectIndex:NSInteger;
+            if (self.modelArray.count > 2) {
+                currentSelectIndex = self.currentPageIndex;
+            } else if (self.modelArray.count == 2) {
+                currentSelectIndex = self.currentPageIndex%2;
+            } else {
+                currentSelectIndex = 0;
+            }
+            let model:AnyObject = self.modelArray.objectAtIndex(currentSelectIndex)
+
+            self.tapSingleImageView(pageIndex: currentSelectIndex, model: model)
+        }
     }
     
     
+    
     func animationTimerDidFired(timer:NSTimer) {
+        if self.totalPageCount == 1 && !self.enbleSingleScroll {
+            self.animationTimer.pauseTimer()
+            return
+        }
         let newOffset = CGPointMake(CGRectGetWidth(self.cycleScrollView.frame) + CGRectGetWidth(self.cycleScrollView.frame), self.cycleScrollView.contentOffset.y);
         self.cycleScrollView.setContentOffset(newOffset, animated: true)
     }
@@ -412,7 +449,7 @@ class TankCycleScrollView:  UIView, UIScrollViewDelegate{
             self.animationTimer.pauseTimer()
             self.cycleScrollView.hidden = true;
             self.stretchImageView.hidden = false;
-            self.stretchImageView.image = self.cycleCarouselArray.objectAtIndex(self.currentPageIndex) as! UIImage;
+            self.stretchImageView.image = self.cycleCarouselArray.objectAtIndex(self.currentPageIndex) as? UIImage;
             self.stretchImageView.frame = CGRectMake(offset, offset, width, height);
         } else {
             self.animationTimer.resumerTimerAfterTimeInterval(2)

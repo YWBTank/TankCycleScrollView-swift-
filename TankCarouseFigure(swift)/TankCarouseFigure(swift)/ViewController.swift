@@ -14,13 +14,14 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         let cycleScrollView:TankCycleScrollView = TankCycleScrollView().initWithFrame(CGRectMake(0, 0, UIScreen.mainScreen().bounds.size.width, 200), animationDuration: 2)
+
         self.view.addSubview(cycleScrollView)
         
         var imageArray: NSMutableArray = NSMutableArray()
         for (var i:Int = 1 ;i < 4; i++) {
-            let imageName:NSString = NSString(format:"h%d.jpg",i)
-            let image:UIImage = UIImage(named: imageName as String)!
-            imageArray.addObject(image)
+                let imageName:NSString = NSString(format:"h%d.jpg",i)
+                let image:UIImage = UIImage(named: imageName as String)!
+                imageArray.addObject(image)
             }
         
 //        let imageArray:NSArray = [
@@ -29,7 +30,10 @@ class ViewController: UIViewController {
 //        "http://c.hiphotos.baidu.com/image/w%3D400/sign=c2318ff84334970a4773112fa5c8d1c0/b7fd5266d0160924c1fae5ccd60735fae7cd340d.jpg"
 //        ];
         cycleScrollView.cycleImageArray = imageArray;
-
+        cycleScrollView.modelArray = imageArray;
+        cycleScrollView.testTapSingleImage { (pageIndex, model) in
+            NSLog("--------------%d", pageIndex);
+        }
     }
 
     override func didReceiveMemoryWarning() {
